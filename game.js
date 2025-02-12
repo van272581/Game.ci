@@ -6,16 +6,18 @@ var Snake = (function () {
   var intervalID;
 
   var tileCount = 10;
-  var gridSize = 400/tileCount;
+  var gridSize = 400 / tileCount;
 
   const INITIAL_PLAYER = { x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2) };
 
-  var velocity = { x:0, y:0 };
+var velocity = { x: 0, y: 0 };
+var isGamePaused = false; // Added flag to track game state
+
   var player = { x: INITIAL_PLAYER.x, y: INITIAL_PLAYER.y };
 
-  var walls = false;
+  var hasWalls = false;
 
-  var fruit = { x:1, y:1 };
+  var fruit = { x: 1, y: 1 };
 
   var trail = [];
   var tail = INITIAL_TAIL;
@@ -24,11 +26,11 @@ var Snake = (function () {
   var points = 0;
   var pointsMax = 0;
 
-  var ActionEnum = { 'none':0, 'up':1, 'down':2, 'left':3, 'right':4 };
+  var ActionEnum = { 'none': 0, 'up': 1, 'down': 2, 'left': 3, 'right': 4 };
   Object.freeze(ActionEnum);
   var lastAction = ActionEnum.none;
-,
-  function setup () {
+
+  function setup() {
     canv = document.getElementById('gc');
     ctx = canv.getContext('2d');
 
@@ -36,7 +38,6 @@ var Snake = (function () {
   }
 
   var game = {
-
     reset: function () {
       ctx.fillStyle = 'grey';
       ctx.fillRect(0, 0, canv.width, canv.height);
@@ -47,37 +48,36 @@ var Snake = (function () {
       velocity.y = 0;
       player.x = INITIAL_PLAYER.x;
       player.y = INITIAL_PLAYER.y;
-      // this.RandomFruit();
+      this.RandomFruit(); // Ensure fruit spawns
       reward = -1;
 
       lastAction = ActionEnum.none;
 
       trail = [];
       trail.push({ x: player.x, y: player.y });
-      // for(var i=0; i<tail; i++) trail.push({ x: player.x, y: player.y });
     },
 
     action: {
       up: function () {
-        if (lastAction != ActionEnum.down){
+        if (lastAction != ActionEnum.down) {
           velocity.x = 0;
           velocity.y = -1;
         }
       },
       down: function () {
-        if (lastAction != ActionEnum.up){
+        if (lastAction != ActionEnum.up) {
           velocity.x = 0;
           velocity.y = 1;
         }
       },
       left: function () {
-        if (lastAction != ActionEnum.right){
+        if (lastAction != ActionEnum.right) {
           velocity.x = -1;
           velocity.y = 0;
         }
       },
       right: function () {
-        if (lastAction != ActionEnum.left){
+        if (lastAction != ActionEnum.left) {
           velocity.x = 1;
           velocity.y = 0;
         }
@@ -85,11 +85,10 @@ var Snake = (function () {
     },
 
     RandomFruit: function () {
-      if(walls){
-        fruit.x = 1+Math.floor(Math.random() * (tileCount-2));
-        fruit.y = 1+Math.floor(Math.random() * (tileCount-2));
-      }
-      else {
+      if (hasWalls) {
+        fruit.x = 1 + Math.floor(Math.random() * (tileCount - 2));
+        fruit.y = 1 + Math.floor(Math.random() * (tileCount - 2));
+      } else {
         fruit.x = Math.floor(Math.random() * tileCount);
         fruit.y = Math.floor(Math.random() * tileCount);
       }
@@ -102,26 +101,38 @@ var Snake = (function () {
     },
 
     loop: function () {
-
       reward = -0.1;
 
-      function DontHitWall () {
-        if(player.x < 0) player.x = tileCount-1;
-        if(player.x >= tileCount) player.x = 0;
-        if(player.y < 0) player.y = tileCount-1;
-        if(player.y >= tileCount) player.y = 0;
+      function DontHitWall() {
+        if (player.x < 0) player.x = tileCount - 1;
+        if (player.x >= tileCount) player.x = 0;
+        if (player.y < 0) player.y = tileCount - 1;
+        if (player.y >= tileCount) player.y = 0;
       }
-      function HitWall () {
-        if(player.x < 1) game.reset();
-        if(player.x > tileCount-2) game.reset();
-        if(player.y < 1) game.reset();
-        if(player.y > tileCount-2) game.reset();
+
+      function HitWall() {
+        if (player.x < 1) {
+          game.reset();
+          alert("Game Over! You hit a wall."); // User feedback
+        }
+        if (player.x > tileCount - 2) {
+          game.reset();
+          alert("Game Over! You hit a wall."); // User feedback
+        }
+        if (player.y < 1) {
+          game.reset();
+          alert("Game Over! You hit a wall."); // User feedback
+        }
+        if (player.y > tileCount - 2) {
+          game.reset();
+          alert("Game Over! You hit a wall."); // User feedback
+        }
 
         ctx.fillStyle = 'grey';
-        ctx.fillRect(0,0,gridSize-1,canv.height);
-        ctx.fillRect(0,0,canv.width,gridSize-1);
-        ctx.fillRect(canv.width-gridSize+1,0,gridSize,canv.height);
-        ctx.fillRect(0, canv.height-gridSize+1,canv.width,gridSize);
+        ctx.fillRect(0, 0, gridSize - 1, canv.height);
+        ctx.fillRect(0, 0, canv.width, gridSize - 1);
+        ctx.fillRect(canv.width - gridSize + 1, 0, gridSize, canv.height);
+        ctx.fillRect(0, canv.height - gridSize + 1, canv.width, gridSize);
       }
 
       var stopped = velocity.x == 0 && velocity.y == 0;
@@ -135,19 +146,17 @@ var Snake = (function () {
       if (velocity.x == 1 && velocity.y == 0) lastAction = ActionEnum.right;
 
       ctx.fillStyle = 'rgba(40,40,40,0.8)';
-      ctx.fillRect(0,0,canv.width,canv.height);
+      ctx.fillRect(0, 0, canv.width, canv.height);
 
-      if(walls) HitWall();
+      if (hasWalls) HitWall();
       else DontHitWall();
 
-      // game.log();
-
-      if (!stopped){
-        trail.push({x:player.x, y:player.y});
-        while(trail.length > tail) trail.shift();
+      if (!stopped) {
+        trail.push({ x: player.x, y: player.y });
+        while (trail.length > tail) trail.shift();
       }
 
-      if(!stopped) {
+      if (!stopped) {
         ctx.fillStyle = 'rgba(200,200,200,0.2)';
         ctx.font = "small-caps 14px Helvetica";
         ctx.fillText("(esc) reset", 24, 356);
@@ -155,26 +164,23 @@ var Snake = (function () {
       }
 
       ctx.fillStyle = 'green';
-      for(var i=0; i<trail.length-1; i++) {
-        ctx.fillRect(trail[i].x * gridSize+1, trail[i].y * gridSize+1, gridSize-2, gridSize-2);
-
-        // console.debug(i + ' => player:' + player.x, player.y + ', trail:' + trail[i].x, trail[i].y);
-        if (!stopped && trail[i].x == player.x && trail[i].y == player.y){
+      for (var i = 0; i < trail.length - 1; i++) {
+        ctx.fillRect(trail[i].x * gridSize + 1, trail[i].y * gridSize + 1, gridSize - 2, gridSize - 2);
+        if (!stopped && trail[i].x == player.x && trail[i].y == player.y) {
           game.reset();
         }
         ctx.fillStyle = 'lime';
       }
-      ctx.fillRect(trail[trail.length-1].x * gridSize+1, trail[trail.length-1].y * gridSize+1, gridSize-2, gridSize-2);
+      ctx.fillRect(trail[trail.length - 1].x * gridSize + 1, trail[trail.length - 1].y * gridSize + 1, gridSize - 2, gridSize - 2);
 
       if (player.x == fruit.x && player.y == fruit.y) {
-        if(!fixedTail) tail++;
+        if (!fixedTail) tail++;
         points++;
-        if(points > pointsMax) pointsMax = points;
+        if (points > pointsMax) pointsMax = points;
         reward = 1;
         game.RandomFruit();
-        // make sure new fruit didn't spawn in snake tail
-        while((function () {
-          for(var i=0; i<trail.length; i++) {
+        while ((function () {
+          for (var i = 0; i < trail.length; i++) {
             if (trail[i].x == fruit.x && trail[i].y == fruit.y) {
               game.RandomFruit();
               return true;
@@ -185,9 +191,9 @@ var Snake = (function () {
       }
 
       ctx.fillStyle = 'red';
-      ctx.fillRect(fruit.x * gridSize+1, fruit.y * gridSize+1, gridSize-2, gridSize-2);
+      ctx.fillRect(fruit.x * gridSize + 1, fruit.y * gridSize + 1, gridSize - 2, gridSize - 2);
 
-      if(stopped) {
+      if (stopped) {
         ctx.fillStyle = 'rgba(250,250,250,0.8)';
         ctx.font = "small-caps bold 14px Helvetica";
         ctx.fillText("press ARROW KEYS to START...", 24, 374);
@@ -202,37 +208,46 @@ var Snake = (function () {
     }
   }
 
-  function keyPush (evt) {
-    switch(evt.keyCode) {
+  function keyPush(evt) {
+    switch (evt.keyCode) {
       case 37: //left
-      game.action.left();
-      evt.preventDefault();
-      break;
+        game.action.left();
+        evt.preventDefault();
+        break;
 
       case 38: //up
-      game.action.up();
-      evt.preventDefault();
-      break;
+        game.action.up();
+        evt.preventDefault();
+        break;
 
       case 39: //right
-      game.action.right();
-      evt.preventDefault();
-      break;
+        game.action.right();
+        evt.preventDefault();
+        break;
 
       case 40: //down
-      game.action.down();
-      evt.preventDefault();
-      break;
+        game.action.down();
+        evt.preventDefault();
+        break;
 
-      case 32: //space
-      Snake.pause();
-      evt.preventDefault();
-      break;
+      case 32: //space - pause
+        if (!isGamePaused) { // Check if the game is not paused
+          Snake.pause();
+          isGamePaused = true; // Set the game state to paused
+        }
 
-      case 27: //esc
-      game.reset();
-      evt.preventDefault();
-      break;
+        Snake.pause();
+        evt.preventDefault();
+        break;
+
+      case 27: //esc - reset
+        if (!isGamePaused) { // Check if the game is not paused
+          game.reset();
+        }
+
+        game.reset();
+        evt.preventDefault();
+        break;
     }
   }
 
@@ -259,7 +274,7 @@ var Snake = (function () {
         }
       },
       wall: function (state) {
-        walls = state;
+        hasWalls = state; // Updated to use hasWalls
       },
       tileCount: function (size) {
         tileCount = size;
@@ -271,7 +286,7 @@ var Snake = (function () {
     },
 
     action: function (act) {
-      switch(act) {
+      switch (act) {
         case 'left':
           game.action.left();
           break;
